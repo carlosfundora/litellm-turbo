@@ -1,0 +1,57 @@
+name: litellm-turbo-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "50 8 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: litellm-turbo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-litellm-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-litellm-${{ matrix.python-version }}-
+
+      - name: Install dev deps
+        run: uv sync --group dev
+
+      - name: Ruff
+        run: uv run ruff check litellm
+
+      - name: MyPy
+        run: uv run mypy litellm
+
+      - name: Import smoke
+        run: uv run python -c "import litellm; print(litellm.__name__)"
+
+      - name: Pytest smoke
+        run: uv run pytest -q
