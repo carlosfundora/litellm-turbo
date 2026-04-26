@@ -3249,6 +3249,7 @@ class LlmProviders(str, Enum):
     CUSTOM = "custom"
     LITELLM_PROXY = "litellm_proxy"
     HOSTED_VLLM = "hosted_vllm"
+    SGLANG = "sglang"
     LLAMAFILE = "llamafile"
     LM_STUDIO = "lm_studio"
     GALADRIEL = "galadriel"
@@ -3309,9 +3310,12 @@ LlmProvidersSet = {provider.value for provider in LlmProviders}
 OPENAI_COMPATIBLE_BATCH_AND_FILES_PROVIDERS: set[str] = {
     LlmProviders.OPENAI.value,
     LlmProviders.HOSTED_VLLM.value,
+    LlmProviders.SGLANG.value,
 }
 
-ListBatchesSupportedProvider = Literal["openai", "azure", "hosted_vllm", "vertex_ai"]
+ListBatchesSupportedProvider = Literal[
+    "openai", "azure", "hosted_vllm", "sglang", "vertex_ai"
+]
 
 LIST_BATCHES_SUPPORTED_PROVIDERS: frozenset[str] = frozenset(
     get_args(ListBatchesSupportedProvider)

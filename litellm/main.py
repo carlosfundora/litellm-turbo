@@ -2533,6 +2533,15 @@ def completion(  # type: ignore # noqa: PLR0915
             logging.post_call(
                 input=messages, api_key=api_key, original_response=response
             )
+        elif custom_llm_provider == "sglang":
+            api_base = api_base or litellm.api_base or get_secret_str("SGLANG_API_BASE")
+            api_key = (
+                api_key
+                or litellm.api_key
+                or get_secret_str("SGLANG_API_KEY")
+                or "fake-api-key"
+            )
+            custom_llm_provider = "openai"
         elif custom_llm_provider == "hosted_vllm":
             api_base = (
                 api_base or litellm.api_base or get_secret_str("HOSTED_VLLM_API_BASE")
@@ -4958,6 +4967,15 @@ def embedding(  # noqa: PLR0915
                 client=client,
                 aembedding=aembedding,
             )
+        elif custom_llm_provider == "sglang":
+            api_base = api_base or litellm.api_base or get_secret_str("SGLANG_API_BASE")
+            api_key = (
+                api_key
+                or litellm.api_key
+                or get_secret_str("SGLANG_API_KEY")
+                or "fake-api-key"
+            )
+            custom_llm_provider = "openai"
         elif custom_llm_provider == "hosted_vllm":
             api_base = (
                 api_base or litellm.api_base or get_secret_str("HOSTED_VLLM_API_BASE")
