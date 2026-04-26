@@ -2,6 +2,15 @@ name: litellm-turbo-python-ci
 
 on:
   pull_request:
+    paths:
+      - 'litellm/**'
+      - 'tests/**'
+      - 'proxy_server/**'
+      - 'docker/**'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/litellm-turbo-python-ci.yml'
   push:
     branches: [main]
   workflow_dispatch:
@@ -16,7 +25,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect:
+    name: Detect LiteLLM-relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      routing: ${{ steps.filter.outputs.routing }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          else
+            changed="$(git diff --name-only HEAD~1...HEAD || true)"
+          fi
+          python=false
+          routing=false
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              litellm/*|litellm/**|tests/*|tests/**|requirements*.txt|pyproject.toml|uv.lock|.github/workflows/litellm-turbo-python-ci.yml)
+                python=true ;;
+            esac
+            case "$file" in
+              *sglang*|*SGLang*|*vllm*|*VLLM*|*llama*|*Llama*|*rocm*|*ROCm*|*hip*|*HIP*|*turboquant*|*TurboQuant*|*rotorquant*|*RotorQuant*|proxy_server/*|proxy_server/**)
+                routing=true ;;
+            esac
+          done <<< "$changed"
+          printf '%s\n' "$changed"
+          echo "python=$python" >> "$GITHUB_OUTPUT"
+          echo "routing=$routing" >> "$GITHUB_OUTPUT"
+
   lint-typecheck-smoke:
+    needs: detect
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || needs.detect.outputs.python == 'true' || needs.detect.outputs.routing == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -25,14 +73,11 @@ jobs:
         python-version: ["3.10", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - uses: astral-sh/setup-uv@v3
-
+      - uses: astral-sh/setup-uv@v7
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -40,18 +85,23 @@ jobs:
           key: ${{ runner.os }}-uv-litellm-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
           restore-keys: |
             ${{ runner.os }}-uv-litellm-${{ matrix.python-version }}-
-
       - name: Install dev deps
         run: uv sync --group dev
-
       - name: Ruff
         run: uv run ruff check litellm
-
       - name: MyPy
         run: uv run mypy litellm
-
       - name: Import smoke
         run: uv run python -c "import litellm; print(litellm.__name__)"
-
+      - name: Router/proxy smoke
+        if: needs.detect.outputs.routing == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          uv run python - <<'PY'
+          import importlib.util
+          import litellm
+          print('litellm:', litellm.__name__)
+          for name in ['litellm.proxy', 'litellm.router']:
+              print(name, bool(importlib.util.find_spec(name)))
+          PY
       - name: Pytest smoke
         run: uv run pytest -q
