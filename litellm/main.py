@@ -2534,7 +2534,6 @@ def completion(  # type: ignore # noqa: PLR0915
                 input=messages, api_key=api_key, original_response=response
             )
         elif custom_llm_provider == "sglang":
-            api_base = api_base or litellm.api_base or get_secret_str("SGLANG_API_BASE")
             api_key = (
                 api_key
                 or litellm.api_key
@@ -4968,7 +4967,6 @@ def embedding(  # noqa: PLR0915
                 aembedding=aembedding,
             )
         elif custom_llm_provider == "sglang":
-            api_base = api_base or litellm.api_base or get_secret_str("SGLANG_API_BASE")
             api_key = (
                 api_key
                 or litellm.api_key

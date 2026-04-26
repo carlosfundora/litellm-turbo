@@ -8086,7 +8086,7 @@ class ProviderConfigManager:
                 False,
             ),
             LlmProviders.HOSTED_VLLM: (lambda: litellm.HostedVLLMChatConfig(), False),
-            LlmProviders.SGLANG: (lambda: litellm.OpenAIGPTConfig(), False),
+            LlmProviders.SGLANG: (litellm.OpenAIGPTConfig, False),
             LlmProviders.LLAMAFILE: (lambda: litellm.LlamafileChatConfig(), False),
             LlmProviders.LM_STUDIO: (lambda: litellm.LMStudioChatConfig(), False),
             LlmProviders.GALADRIEL: (lambda: litellm.GaladrielChatConfig(), False),
