@@ -1,3 +1,4 @@
+from unittest.mock import patch, AsyncMock
 """
 Test prompt endpoints for version filtering and history
 """
@@ -192,7 +193,8 @@ class TestPromptVersionsEndpoint:
     """
 
     @pytest.mark.asyncio
-    async def test_get_prompt_versions_returns_all_versions(self):
+    @patch("litellm.proxy.proxy_server.prisma_client", new_callable=AsyncMock)
+    async def test_get_prompt_versions_returns_all_versions(self, mock_prisma_client):
         """
         Test that get_prompt_versions returns all versions of a prompt sorted by version number
         """
@@ -200,6 +202,37 @@ class TestPromptVersionsEndpoint:
 
         from litellm.proxy._types import LitellmUserRoles, UserAPIKeyAuth
         from litellm.proxy.prompts.prompt_endpoints import get_prompt_versions
+
+        class MockRow:
+            def __init__(self, pid, v):
+                self.id = "mock-id"
+                self.prompt_id = pid
+                self.version = v
+                self.environment = "development"
+                self.created_by = "test_user"
+                self.litellm_params = '{"prompt_id": "jack", "prompt_integration": "dotprompt"}'
+                self.prompt_info = '{"prompt_type": "db"}'
+                self.created_at = None
+                self.updated_at = None
+            def model_dump(self):
+                return {
+                    "id": self.id,
+                    "prompt_id": self.prompt_id,
+                    "version": self.version,
+                    "environment": self.environment,
+                    "created_by": self.created_by,
+                    "litellm_params": self.litellm_params,
+                    "prompt_info": self.prompt_info,
+                    "created_at": self.created_at,
+                    "updated_at": self.updated_at
+                }
+
+        mock_prisma_client.db.litellm_prompttable.find_many.return_value = [
+            MockRow("jack", 3),
+            MockRow("jack", 2),
+            MockRow("jack", 1)
+        ]
+
 
         # Mock user with admin role
         mock_user = UserAPIKeyAuth(
@@ -277,7 +310,8 @@ class TestPromptVersionsEndpoint:
             assert response.prompts[0].version == 3
 
     @pytest.mark.asyncio
-    async def test_get_prompt_versions_not_found(self):
+    @patch("litellm.proxy.proxy_server.prisma_client", new_callable=AsyncMock)
+    async def test_get_prompt_versions_not_found(self, mock_prisma_client):
         """
         Test that get_prompt_versions raises 404 when prompt doesn't exist
         """
