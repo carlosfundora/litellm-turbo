@@ -648,6 +648,11 @@ def _get_openai_compatible_provider_info(  # noqa: PLR0915
             or "https://codestral.mistral.ai/v1"
         )  # type: ignore
         dynamic_api_key = api_key or get_secret_str("CODESTRAL_API_KEY")
+    elif custom_llm_provider == "sglang":
+        # sglang is openai compatible, we just need to set this to openai
+        api_base = api_base or get_secret_str("SGLANG_API_BASE")
+        dynamic_api_key = api_key or get_secret_str("SGLANG_API_KEY") or "fake-api-key"
+        custom_llm_provider = "openai"
     elif custom_llm_provider == "hosted_vllm":
         # vllm is openai compatible, we just need to set this to custom_openai
         (
