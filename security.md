@@ -76,3 +76,41 @@ LiteLLM supports the following data regions:
 - Europe, Frankfurt, Germany (AWS/GCP `eu-central-1`)
 
 All data, user accounts, and infrastructure are completely separated between these two regions
+
+
+## Fork deployment safety - 2026-10-22
+
+The October 21 LiteLLM incident affected the published 1.107.0 wheels and
+upstream floating image tags. A clean Git tag or a removed release does not
+clear an environment that already installed the artifacts. See the
+[incident report](https://github.com/BerriAI/litellm/issues/47826).
+
+Change record for this fork:
+
+- The Kubernetes example now uses the same complete March image digest as
+  `deploy/Dockerfile.ghcr_base`. It preserves the existing gateway configuration,
+  arguments, probes, ports, and mounts.
+- The default Compose stack keeps its existing build context and uses
+  `litellm-turbo:local` with `pull_policy: build`. It builds this locked fork
+  instead of preferring a floating upstream image. Do not combine a digest
+  reference with this build output tag: Docker needs a writable image tag.
+- The custom UI Dockerfile retains its specialized image and pins its current
+  index digest. Both platform configurations were dated August 7, 2024.
+- The legacy cookbook Dockerfile consumes its existing
+  `litellm==1.83.5` requirements file. No dependency upgrade is introduced.
+- `make test-supply-chain` runs six file-only Node tests, including rejection
+  controls for floating references, the reported malicious digests, the bad
+  wheel version, and an unconstrained wheel install. It never starts Python.
+  Ordinary Python tests and image builds were not run for this audit.
+
+The Helm default remains `litellm-database:main-v1.80.12`, derived from the
+chart's explicit application version. User-provided Helm values, build argument
+overrides, legacy notebooks, and documentation install commands can select
+different artifacts. Their prior execution is not established by this source
+audit. Revalidate the deployed digest and installed metadata before reuse.
+
+The maintained cross-repository inventory, host observations, build history,
+coverage limits, and conditional containment plan are recorded in the
+[collective audit](https://github.com/carlosfundora/harness/blob/main/docs/audits/system-audit-current.md#litellm-audit-20261022).
+These changes prevent the identified default selection paths; they do not
+certify previously installed environments or authorize a service restart.

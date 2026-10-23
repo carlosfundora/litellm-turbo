@@ -1,7 +1,7 @@
 # LiteLLM Makefile
 # Simple Makefile for running tests and basic development tasks
 
-.PHONY: help test test-unit test-unit-llms test-unit-proxy-guardrails test-unit-proxy-core test-unit-proxy-misc \
+.PHONY: test-supply-chain help test test-unit test-unit-llms test-unit-proxy-guardrails test-unit-proxy-core test-unit-proxy-misc \
 	test-unit-integrations test-unit-core-utils test-unit-other test-unit-root \
 	test-proxy-unit-a test-proxy-unit-b test-integration test-unit-helm \
 	info lint lint-dev format \
@@ -26,6 +26,7 @@ help:
 	@echo "  make check-circular-imports - Check for circular imports"
 	@echo "  make check-import-safety - Check import safety"
 	@echo "  make test               - Run all tests"
+	@echo "  make test-supply-chain  - Check deployment inputs without starting Python"
 	@echo "  make test-unit          - Run unit tests (tests/test_litellm)"
 	@echo "  make test-unit-llms     - Run LLM provider tests (~225 files)"
 	@echo "  make test-unit-proxy-guardrails - Run proxy guardrails+mgmt tests (~51 files)"
@@ -185,3 +186,7 @@ test-llm-translation-single: install-test-deps
 	$(UV_RUN) pytest tests/llm_translation/$(FILE) \
 		--junitxml=test-results/junit.xml \
 		-v --tb=short --maxfail=100 --timeout=300
+
+# File-only checks remain usable while a Python installation is untrusted.
+test-supply-chain:
+	node --test tests/litellm/supply-chain.test.mjs

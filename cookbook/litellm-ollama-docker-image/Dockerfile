@@ -20,6 +20,7 @@ COPY . /app
 
 # Install any needed packages specified in requirements.txt
 
-RUN python3 -m pip install litellm
+# Use the existing reviewed version instead of resolving the newest wheel.
+RUN python3 -m pip install --no-cache-dir -r /app/requirements.txt
 COPY start.sh /start.sh
 ENTRYPOINT [ "/bin/bash", "/start.sh" ]
