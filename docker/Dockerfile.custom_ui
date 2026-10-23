@@ -1,6 +1,6 @@
 # Use the provided base image
 # NOTE: This is a dev/branch-specific tag. Update digest when the base image is rebuilt.
-FROM ghcr.io/berriai/litellm:litellm_fwd_server_root_path-dev
+FROM ghcr.io/berriai/litellm:litellm_fwd_server_root_path-dev@sha256:3202585e5e4b0c8a840dcd3c4f6ed728ec9658b3fa2810a25b433f9c29a04381
 
 # Set the working directory to /app
 WORKDIR /app

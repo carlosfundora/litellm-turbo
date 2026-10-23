@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: litellm-container
-          image: ghcr.io/berriai/litellm:main-latest
+          # Same pre-incident artifact as deploy/Dockerfile.ghcr_base.
+          image: ghcr.io/berriai/litellm:main-latest@sha256:7c311546c25e7bb6e8cafede9fcd3d0d622ac636b5c9418befaa32e85dfb0186
           imagePullPolicy: Always
           env:
             - name: AZURE_API_KEY
